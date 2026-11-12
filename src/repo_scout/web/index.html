@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>RepoScout · GitHub 机会雷达</title>
+  <meta name="description" content="RepoScout 星探：从 GitHub Trending 中筛出可复刻、有商业空白的机会项目。">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <circle cx="16" cy="16" r="7" fill="none" stroke="currentColor" stroke-opacity=".55"/>
+        <circle cx="16" cy="16" r="2.4" fill="currentColor"/>
+        <path d="M16 16 L26 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">RepoScout</span>
+      <span class="brand-sub">星探</span>
+    </div>
+
+    <div class="topbar-meta">
+      <div class="status-pill" id="status-pill" data-state="loading" title="数据新鲜度">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="status-text">正在读取本地数据…</span>
+      </div>
+      <span class="topbar-sep" aria-hidden="true"></span>
+      <span class="topbar-hint" id="snapshot-text">快照 —</span>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" id="refresh-btn" type="button" title="重新加载本地数据">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M15.5 5.5A7 7 0 1 0 17 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M15.8 2.8v3.4h-3.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>刷新</span>
+      </button>
+      <button class="btn btn-ghost" id="export-btn" type="button" title="按当前筛选导出 CSV">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m0 0 3.2-3.2M10 12 6.8 8.8M4 14.5V16h12v-1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>导出</span>
+      </button>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="切换明暗主题" title="切换主题">
+        <svg class="icon-sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <svg class="icon-moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M16 12.2A6.6 6.6 0 0 1 7.8 4 6.8 6.8 0 1 0 16 12.2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <div class="rail-scrim" id="rail-scrim" hidden></div>
+
+    <aside class="rail" id="rail" aria-label="筛选条件">
+      <div class="rail-head">
+        <h2>筛选</h2>
+        <div class="rail-head-actions">
+          <button class="link-btn" id="reset-filters" type="button">重置</button>
+          <button class="icon-btn rail-close" id="rail-close" type="button" aria-label="关闭筛选">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label" for="q">搜索</label>
+        <input id="q" type="search" placeholder="仓库名、描述、topic" autocomplete="off">
+      </div>
+
+      <div class="filter-grid">
+        <div class="filter-group">
+          <label class="filter-label" for="language">语言</label>
+          <select id="language"><option value="">全部</option></select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="license">License</label>
+          <select id="license">
+            <option value="">全部</option>
+            <option value="green">可商用</option>
+            <option value="yellow">修改需开源</option>
+            <option value="red">GPL/AGPL</option>
+            <option value="gray">无许可</option>
+            <option value="unknown">需复核</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="paid-version">商业化</label>
+          <select id="paid-version">
+            <option value="">全部</option>
+            <option value="none">未见商业化</option>
+            <option value="possible">疑似</option>
+            <option value="likely">已商业化</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="complexity">复杂度</label>
+          <select id="complexity">
+            <option value="">全部</option>
+            <option value="A">A · 半周–1 周</option>
+            <option value="B">B · 1–2 周</option>
+            <option value="C">C · 2–3 周</option>
+            <option value="D">D · 3–4 周</option>
+            <option value="E">E · 不建议</option>
+            <option value="F">F · 放弃</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-grid">
+        <div class="filter-group">
+          <label class="filter-label" for="min-stars">最低星数</label>
+          <input id="min-stars" type="number" min="0" step="100" value="500" inputmode="numeric">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="min-delta7">Δ7d 下限</label>
+          <input id="min-delta7" type="number" step="100" placeholder="不限" inputmode="numeric">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="min-repro">复刻分 ≥</label>
+          <input id="min-repro" type="number" min="0" max="100" step="5" placeholder="不限" inputmode="numeric">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="min-biz">商业分 ≥</label>
+          <input id="min-biz" type="number" min="0" max="100" step="5" placeholder="不限" inputmode="numeric">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="max-competitors">竞品上限</label>
+          <input id="max-competitors" type="number" min="0" step="1" placeholder="不限" inputmode="numeric">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="risk">风险</label>
+          <select id="risk">
+            <option value="">全部</option>
+            <option value="suspicious">刷星嫌疑</option>
+            <option value="commercialized">疑似/已商业化</option>
+            <option value="gpl">GPL/AGPL</option>
+            <option value="low_confidence">数据不足</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-toggles">
+        <label class="toggle-row">
+          <input id="include-gpl" type="checkbox">
+          <span class="toggle-track" aria-hidden="true"></span>
+          <span>显示 GPL/AGPL（默认隐藏）</span>
+        </label>
+        <label class="toggle-row">
+          <input id="include-giant" type="checkbox">
+          <span class="toggle-track" aria-hidden="true"></span>
+          <span>显示巨石项目（默认隐藏）</span>
+        </label>
+        <label class="toggle-row">
+          <input id="watched-only" type="checkbox">
+          <span class="toggle-track" aria-hidden="true"></span>
+          <span>只看已收藏</span>
+        </label>
+      </div>
+
+      <div class="rail-foot">
+        <p>数据来自本地 SQLite；评分口径见 <code>README.md</code>。</p>
+      </div>
+    </aside>
+
+    <main id="main">
+      <section id="list-view" aria-labelledby="list-title">
+        <div class="page-head">
+          <div>
+            <h1 id="list-title">机会雷达</h1>
+            <p class="page-sub">按增长、复刻性与商业空白筛出今天值得看的项目。</p>
+          </div>
+          <div class="head-controls">
+            <button class="btn btn-ghost rail-toggle" id="rail-toggle" type="button" aria-controls="rail" aria-expanded="false">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M6 10h8M8 15h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <span>筛选</span>
+            </button>
+          </div>
+        </div>
+
+        <section class="pipeline-panel" id="pipeline-panel" aria-labelledby="pipeline-title">
+          <div class="pipeline-head">
+            <div>
+              <h2 id="pipeline-title">采集与分析流程</h2>
+              <p>在本地按顺序运行；任务在后台执行，完成后自动刷新数据。</p>
+            </div>
+            <div class="pipeline-head-actions">
+              <button class="btn btn-primary" id="run-full" type="button">运行全流程</button>
+              <button class="btn btn-ghost" id="pipeline-refresh" type="button">刷新状态</button>
+            </div>
+          </div>
+          <div class="pipeline-warnings" id="pipeline-warnings" hidden></div>
+          <ol class="pipeline-stages" id="pipeline-stages" aria-label="流程阶段"></ol>
+          <details class="pipeline-options">
+            <summary>运行参数</summary>
+            <div class="options-grid">
+              <label>浅分析上限 <input id="opt-analyze-limit" type="number" min="0" step="10"></label>
+              <label>深分析上限 <input id="opt-deep-limit" type="number" min="0" step="5"></label>
+              <label>商业上限 <input id="opt-biz-limit" type="number" min="0" step="10"></label>
+              <label class="option-check"><input id="opt-force" type="checkbox"> 强制刷新</label>
+              <label class="option-check"><input id="opt-deep" type="checkbox"> 全流程包含深分析</label>
+              <label class="option-check"><input id="opt-competition" type="checkbox" checked> 查询竞品</label>
+            </div>
+          </details>
+          <div class="pipeline-job" id="pipeline-job" hidden>
+            <div class="job-head">
+              <span class="job-title" id="job-title">任务</span>
+              <span class="job-status" id="job-status">等待中</span>
+            </div>
+            <div class="job-stage" id="job-stage">—</div>
+            <div class="job-track"><span id="job-progress"></span></div>
+            <div class="job-meta"><span id="job-percent">0%</span><span id="job-time"></span></div>
+            <div class="job-result" id="job-result"></div>
+            <pre class="job-log" id="job-log" aria-live="polite"></pre>
+          </div>
+        </section>
+
+        <div class="preset-bar" id="presets" role="group" aria-label="排序预设"></div>
+
+        <div class="summary-strip" id="summary" aria-label="数据摘要"></div>
+
+        <section class="daily-band" id="daily-band" aria-labelledby="daily-title" hidden>
+          <div class="band-head">
+            <h2 id="daily-title">今日雷达</h2>
+            <p>默认门槛下综合分最高的 5 个项目</p>
+          </div>
+          <ol class="daily-list" id="daily-list"></ol>
+        </section>
+
+        <div class="list-toolbar">
+          <p class="result-count" id="result-count">正在加载…</p>
+          <div class="toolbar-controls">
+            <div class="view-toggle" role="group" aria-label="视图切换">
+              <button type="button" id="view-cards" aria-pressed="false" title="卡片视图">卡片</button>
+              <button type="button" id="view-table" aria-pressed="true" title="表格视图">表格</button>
+            </div>
+            <label class="select-label" for="sort-select">排序</label>
+            <select id="sort-select">
+              <option value="total">综合分</option>
+              <option value="trend">TrendScore</option>
+              <option value="velocity">7 日增速</option>
+              <option value="delta7">Δ7d</option>
+              <option value="delta30">Δ30d</option>
+              <option value="repro">复刻分</option>
+              <option value="biz">商业分</option>
+              <option value="stars">总星数</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-shell" id="table-shell">
+          <table class="repo-table" aria-describedby="result-count">
+            <caption class="sr-only">仓库机会列表，可点击列头排序</caption>
+            <thead>
+              <tr>
+                <th class="col-rank" scope="col">#</th>
+                <th class="col-repo" scope="col">
+                  <button class="th-sort" type="button" data-sort="stars">项目</button>
+                </th>
+                <th class="col-delta" scope="col"><button class="th-sort" type="button" data-sort="delta24">Δ24h</button></th>
+                <th class="col-delta" scope="col"><button class="th-sort" type="button" data-sort="delta7">Δ7d</button></th>
+                <th class="col-delta col-hide-md" scope="col"><button class="th-sort" type="button" data-sort="delta30">Δ30d</button></th>
+                <th class="col-velocity col-hide-md" scope="col"><button class="th-sort" type="button" data-sort="velocity">增速</button></th>
+                <th class="col-score" scope="col"><button class="th-sort" type="button" data-sort="repro">复刻</button></th>
+                <th class="col-score" scope="col"><button class="th-sort" type="button" data-sort="biz">商业</button></th>
+                <th class="col-score" scope="col"><button class="th-sort" type="button" data-sort="total">总分</button></th>
+                <th class="col-license" scope="col">License</th>
+                <th class="col-risk" scope="col">风险</th>
+                <th class="col-comp col-hide-sm" scope="col"><button class="th-sort" type="button" data-sort="competitors">竞品</button></th>
+                <th class="col-actions" scope="col"><span class="sr-only">操作</span></th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+          <div class="table-empty" id="table-empty" hidden></div>
+        </div>
+
+        <div class="card-grid" id="card-grid" hidden></div>
+
+        <div class="pagination" id="pagination" hidden>
+          <button class="btn btn-ghost" id="prev-page" type="button">上一页</button>
+          <span id="page-info">第 1 页</span>
+          <button class="btn btn-ghost" id="next-page" type="button">下一页</button>
+        </div>
+      </section>
+
+      <section id="detail-view" aria-labelledby="detail-title" hidden>
+        <div id="detail-content"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <template id="skeleton-row">
+    <tr class="skeleton-row">
+      <td><span class="skeleton w-6"></span></td>
+      <td><span class="skeleton w-60"></span><span class="skeleton w-40"></span></td>
+      <td><span class="skeleton w-12"></span></td>
+      <td><span class="skeleton w-12"></span></td>
+      <td class="col-hide-md"><span class="skeleton w-12"></span></td>
+      <td class="col-hide-md"><span class="skeleton w-10"></span></td>
+      <td><span class="skeleton w-10"></span></td>
+      <td><span class="skeleton w-10"></span></td>
+      <td><span class="skeleton w-10"></span></td>
+      <td><span class="skeleton w-16"></span></td>
+      <td><span class="skeleton w-16"></span></td>
+      <td class="col-hide-sm"><span class="skeleton w-8"></span></td>
+      <td><span class="skeleton w-8"></span></td>
+    </tr>
+  </template>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

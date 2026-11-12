@@ -1,0 +1,75 @@
+# RepoScout 星探 —— 配置示例
+# 复制为 config.toml 后使用：copy config.example.toml config.toml
+
+[database]
+path = "data/repo_scout.sqlite3"
+
+[http]
+# 请改为可联系到你的真实标识，抓取 GitHub 页面时使用
+user_agent = "RepoScout/0.1 (+https://github.com/your-name; you@example.com)"
+timeout_seconds = 20
+retries = 3
+# 2026-11 实测：GitHub 每个时间窗约 12–15 条；低于 8 条视为页面结构异常
+min_trending_items = 8
+
+[ingest]
+enrich_limit = 200
+snapshot_limit = 500
+snapshot_bucket_hours = 6
+# FR-103：官方星标历史（公开仓库无需 Token，但未鉴权仅 60 次/小时）
+fetch_star_history = true
+star_history_limit = 200
+star_history_weeks = 30
+
+[github]
+# 推荐用环境变量配置，避免写入文件：
+#   REPO_SCOUT_GITHUB_TOKENS=ghp_xxx,ghp_yyy
+tokens = []
+api_base = "https://api.github.com"
+trending_base_url = "https://github.com/trending"
+# 剩余配额低于该值时切换到下一个 Token
+low_watermark = 100
+# 额外请求贡献者数量（每个仓库多 1 次请求），默认关闭
+fetch_contributors = false
+
+[repro]
+# M3：你熟悉的技术栈（小写），用于语言匹配与复刻分（FR-305）
+# 命中满分；TS↔JS 等邻近语言 80%；Python/JS/TS/Go 未命中 55%；
+# Rust/C++ 等高门槛语言未命中 20%，且复刻分上限 40。
+tech_stack = ["python", "typescript", "javascript", "go"]
+# 每次 analyze 最多分析多少个仓库（控制 API 配额）
+analysis_limit = 100
+# 同一仓库的浅分析缓存时间；未过期则跳过（0 表示每次都重算）
+refresh_hours = 24
+# 是否抓取 README 用于外部服务依赖识别（每仓库多 1 次请求）
+fetch_readme = true
+
+# 深分析（浅克隆 + cloc）：只分析复刻分最高的 N 个仓库
+deep_limit = 20
+# 同一仓库深分析缓存时间（周级，默认 7 天）
+deep_refresh_hours = 168
+# 超过该体积（GitHub 元数据 size_kb）直接跳过
+deep_max_size_mb = 200
+# git clone 超时（秒）
+deep_timeout_seconds = 600
+# 源码获取方式：auto = 先 clone，失败后回退 codeload tarball；clone；tarball
+deep_source = "auto"
+# cloc 可执行文件路径；留空则依次查找 PATH / 本地缓存 / GitHub 下载
+cloc_path = ""
+# 本机没有 cloc 时，是否自动从 AlDanial/cloc 下载 Perl 脚本到 data/tools/
+cloc_auto_download = true
+
+[biz]
+# M4：商业价值分析（issues 付费意愿 / 商业化 / 竞品 / 受众 / 差异化）
+analysis_limit = 100
+# 同一仓库商业信号缓存时间（周级）
+refresh_hours = 168
+# 最近多少条 open issues 用于付费意愿匹配（上限 100）
+issue_limit = 100
+# 是否调用 Search API 统计竞品（只对 ReproScore >= competition_min_repro 的仓库）
+competition = true
+# 每日最多查询多少个仓库，控制 Search API 配额
+competition_daily_budget = 50
+competition_min_repro = 60
+# Search API 限速 30 次/分钟，查询间隔（秒）
+search_delay_seconds = 2.0
